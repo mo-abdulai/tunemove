@@ -13,6 +13,7 @@ change.
 
 ## Completed
 
+- Replaced the default Next.js README with a comprehensive TuneMove project README covering product overview, stack, workflow, architecture notes, setup steps, roadmap, and security guidance.
 - Standardized project branding as TuneMove across package metadata, app metadata/UI text, and context documentation.
 - Simplified `app/globals.css` to only the Tailwind import directive.
 - Replaced `app/page.tsx` with a minimal centered "Tune Move" component.
@@ -56,6 +57,7 @@ change.
 
 ## Session Notes
 
+- Repository onboarding docs are now project-specific via the updated `README.md`.
 - Design system baseline is implemented and verified; future feature work should consume the tokenized utilities and generated primitives.
 - Project naming is now standardized on TuneMove/tunemove.
 - Authentication foundation is now wired end to end (provider, proxy protection, auth pages, root redirect, dashboard user menu) and passes production build.
