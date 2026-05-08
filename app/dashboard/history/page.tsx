@@ -1,18 +1,17 @@
 import { PageContainer } from "@/components/dashboard/page-container";
 
-export default function DashboardPage() {
+export default function HistoryPage() {
   return (
     <PageContainer
-      title="Dashboard"
-      description="Overview of your TuneMove transfer activity and connected services."
+      title="History"
+      description="Review completed and in-progress playlist transfer runs."
     >
       <section className="rounded-2xl border border-surface-border bg-surface p-6">
         <h2 className="text-lg font-semibold tracking-tight text-copy-primary">
-          Dashboard Overview
+          Transfer History
         </h2>
         <p className="mt-2 text-sm text-copy-secondary">
-          This dashboard shell is ready for upcoming transfer, playlist,
-          connections, and history modules.
+          Historical transfer logs and outcomes will be listed here.
         </p>
       </section>
     </PageContainer>

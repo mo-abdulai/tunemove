@@ -9,7 +9,7 @@ change.
 
 ## Current Goal
 
-- Continue to the next scoped feature unit after the completed authentication foundation.
+- Continue to the next scoped feature unit after completing the dashboard layout shell.
 
 ## Completed
 
@@ -37,6 +37,20 @@ change.
 - Added `/dashboard` shell with a navbar and Clerk `UserButton` in the right section.
 - Added Clerk sign-in/sign-up URL and fallback redirect env vars to `env.local`.
 - Re-verified production build success with `npm run build`.
+- Completed feature `03-dashboard-layout` from `context/feature-specs/03-dashboard-layout.md`.
+- Added reusable dashboard chrome components:
+  `components/dashboard/dashboard-navbar.tsx`,
+  `components/dashboard/dashboard-sidebar.tsx`,
+  `components/dashboard/dashboard-shell.tsx`,
+  `components/dashboard/page-container.tsx`.
+- Refactored `app/dashboard/layout.tsx` to enforce `auth.protect()` at the layout boundary and render the shared `DashboardShell`.
+- Updated `app/dashboard/page.tsx` to use the shared `PageContainer`.
+- Added base dashboard routes and starter pages for:
+  `/dashboard/transfer`,
+  `/dashboard/playlists`,
+  `/dashboard/history`,
+  `/dashboard/connections`,
+  `/dashboard/settings`.
 
 ## In Progress
 
@@ -44,7 +58,7 @@ change.
 
 ## Next Up
 
-- Start the next feature spec on top of the completed auth + design system baseline.
+- Start the next feature spec on top of the completed auth + dashboard shell baseline.
 
 ## Open Questions
 
@@ -54,6 +68,7 @@ change.
 
 - Adopt `shadcn/ui` as the UI primitive baseline and keep generated files under `components/ui/*` unmodified unless explicitly re-generated.
 - Use `proxy.ts` (Next.js 16 convention) with Clerk middleware as the default route protection boundary, while keeping auth UI routes public by env-driven matcher patterns.
+- Keep dashboard chrome state in a single client shell (`DashboardShell`) and derive active nav/page-title UI from the current pathname.
 
 ## Session Notes
 
@@ -61,3 +76,6 @@ change.
 - Design system baseline is implemented and verified; future feature work should consume the tokenized utilities and generated primitives.
 - Project naming is now standardized on TuneMove/tunemove.
 - Authentication foundation is now wired end to end (provider, proxy protection, auth pages, root redirect, dashboard user menu) and passes production build.
+- Dashboard layout foundation is now implemented with responsive sidebar behavior, route-aware navigation highlighting, and reusable page containers for all base dashboard routes.
+- Fixed dashboard sidebar toggle behavior so close/open controls now work correctly across both desktop and mobile viewports by separating desktop and mobile sidebar state handling.
+- Added sidebar icon motion polish: animated nav icons on hover/active, rotating mobile close icon, and animated `New Transfer` icon interactions with reduced-motion safeguards.
