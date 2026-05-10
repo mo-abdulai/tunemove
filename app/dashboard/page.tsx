@@ -13,7 +13,10 @@ export default function DashboardPage() {
       maxWidthClassName="max-w-7xl"
       contentClassName="space-y-8"
     >
-      <section aria-labelledby="connected-platforms-heading" className="space-y-4">
+      <section
+        aria-labelledby="connected-platforms-heading"
+        className="space-y-4 animate-in fade-in-0 duration-300"
+      >
         <div className="space-y-1">
           <h2
             id="connected-platforms-heading"
@@ -46,7 +49,10 @@ export default function DashboardPage() {
           />
         </div>
       </section>
-      <section aria-labelledby="quick-transfer-heading" className="space-y-4">
+      <section
+        aria-labelledby="quick-transfer-heading"
+        className="space-y-4 animate-in fade-in-0 duration-500"
+      >
         <h2
           id="quick-transfer-heading"
           className="text-sm font-semibold tracking-tight text-copy-primary"
@@ -55,7 +61,10 @@ export default function DashboardPage() {
         </h2>
         <QuickTransferCard />
       </section>
-      <section aria-labelledby="recent-activity-heading" className="space-y-4">
+      <section
+        aria-labelledby="recent-activity-heading"
+        className="space-y-4 animate-in fade-in-0 duration-700"
+      >
         <h2
           id="recent-activity-heading"
           className="text-sm font-semibold tracking-tight text-copy-primary"

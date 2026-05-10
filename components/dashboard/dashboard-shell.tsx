@@ -15,6 +15,15 @@ const TITLES_BY_ROUTE: Record<string, string> = {
   "/dashboard/settings": "Settings",
 };
 
+const SUBTITLES_BY_ROUTE: Record<string, string> = {
+  "/dashboard": "Manage playlist transfers and connected platforms",
+  "/dashboard/transfer": "Set up a new source-to-destination transfer",
+  "/dashboard/playlists": "Browse playlists available for migration",
+  "/dashboard/history": "Review completed and in-progress transfers",
+  "/dashboard/connections": "Link and monitor your music platforms",
+  "/dashboard/settings": "Configure dashboard and account preferences",
+};
+
 type DashboardShellProps = {
   children: React.ReactNode;
 };
@@ -49,6 +58,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
     return TITLES_BY_ROUTE[normalizedPathname];
   }, [pathname]);
 
+  const subtitle = useMemo(() => {
+    const normalizedPathname = normalizePathname(pathname);
+
+    return SUBTITLES_BY_ROUTE[normalizedPathname];
+  }, [pathname]);
+
   const isSidebarOpen = isDesktopViewport
     ? isDesktopSidebarOpen
     : isMobileSidebarOpen;
@@ -74,6 +89,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={handleToggleSidebar}
           title={title}
+          subtitle={subtitle}
         />
         <main className="min-h-0 flex-1 overflow-y-auto bg-base">{children}</main>
       </div>
