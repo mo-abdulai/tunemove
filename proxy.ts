@@ -13,6 +13,7 @@ const toRoutePattern = (route: string | undefined, fallback: string) => {
 const isPublicRoute = createRouteMatcher([
   toRoutePattern(process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL, "/sign-in"),
   toRoutePattern(process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL, "/sign-up"),
+  "/api/spotify/callback(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

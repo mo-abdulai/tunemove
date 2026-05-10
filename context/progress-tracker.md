@@ -9,7 +9,7 @@ change.
 
 ## Current Goal
 
-- Continue to the next scoped feature unit after completing dashboard UI polish.
+- Continue to the next scoped feature unit after completing Spotify integration.
 
 ## Completed
 
@@ -71,6 +71,37 @@ change.
 - Improved recent activity empty state density and icon container, plus a subtle CTA to start a transfer.
 - Verified no raw Tailwind neutral palettes or hardcoded colors were introduced in the dashboard polish changes.
 - Verified production build success with `npm run build`.
+- Completed feature `06-spotify-integration` from `context/feature-specs/06-spotify-integration.md`.
+- Added Spotify API client utilities and normalized Spotify types:
+  `lib/spotify.ts`, `types/spotify.ts`.
+- Added temporary server-only Spotify connection metadata storage:
+  `lib/spotify-connection-store.ts`.
+- Added Spotify API routes:
+  `app/api/spotify/connect/route.ts`,
+  `app/api/spotify/callback/route.ts`,
+  `app/api/spotify/profile/route.ts`,
+  `app/api/spotify/playlists/route.ts`.
+- Updated `/dashboard/connections` with a Spotify connection card and connect/reconnect action linking to `/api/spotify/connect`.
+- Updated `/dashboard/playlists` with Spotify playlist loading, error/not-connected, empty, and playlist-card list states via `app/dashboard/playlists/loading.tsx` and `components/dashboard/spotify-playlists-panel.tsx`.
+- Updated architecture context to document temporary in-memory Spotify OAuth connection storage prior to database-backed persistence.
+- Verified production build success with `npm run build`.
+- Refined local Spotify OAuth routing behavior by adding `allowedDevOrigins` in `next.config.ts` and replacing internal `Link` navigation to `/api/spotify/connect` with direct anchor navigation to avoid RSC payload fallback warnings.
+- Reverted forced host redirection in `proxy.ts` after it caused page load instability during local development.
+- Fixed repeated Spotify connect failures across mixed local hosts by moving OAuth `state` handling to a server-side one-time store (`lib/spotify-oauth-state-store.ts`) keyed by state token, then consuming that state in callback to recover the initiating user and return origin without relying on callback-host cookies/session.
+- Updated Spotify connect/callback routes to use one-time state consumption and redirect back to the origin that initiated the OAuth flow.
+- Re-verified lint/build success with `npm run lint` and `npm run build`.
+- Marked `/api/spotify/callback` as a public route in `proxy.ts` so Clerk middleware does not block Spotify callbacks before route-handler state validation runs.
+- Added callback failure reason propagation (`reason` query param) and surfaced connection outcome messaging on `/dashboard/connections` for faster OAuth troubleshooting.
+- Re-verified lint/build success with `npm run lint` and `npm run build`.
+- Replaced in-memory pending OAuth state storage with signed stateless OAuth state payloads in `lib/spotify-oauth-state.ts` and updated connect/callback routes to create/verify HMAC-signed state with expiry.
+- Removed `lib/spotify-oauth-state-store.ts` to eliminate cross-request memory coupling that could invalidate callback state under local dev runtime behavior.
+- Expanded failed-connection UI messaging to include unmapped callback reasons directly (`spotify=failed&reason=...`) for immediate diagnostics.
+- Added callback failure status tagging for Spotify API errors (e.g. `spotify_profile_fetch_failed_401` / `_403`) and surfaced targeted guidance in Connections UI for faster root-cause isolation.
+- Re-verified lint/build success with `npm run lint` and `npm run build`.
+- Re-verified lint/build success with `npm run lint` and `npm run build`.
+- Added Spotify disconnect capability with a protected `POST /api/spotify/disconnect` route that clears the current user’s stored Spotify connection and redirects back to `/dashboard/connections?spotify=disconnected`.
+- Updated `/dashboard/connections` to show a `Disconnect Spotify` button only when connected and to surface a success banner after disconnection.
+- Re-verified lint/build success with `npm run lint` and `npm run build`.
 
 ## In Progress
 
@@ -78,7 +109,7 @@ change.
 
 ## Next Up
 
-- Start the next feature spec on top of the completed auth + dashboard shell + dashboard home + dashboard polish baseline.
+- Start the next feature spec on top of the completed auth + dashboard shell + dashboard home + dashboard polish + Spotify integration baseline.
 
 ## Open Questions
 
@@ -90,6 +121,8 @@ change.
 - Use `proxy.ts` (Next.js 16 convention) with Clerk middleware as the default route protection boundary, while keeping auth UI routes public by env-driven matcher patterns.
 - Keep dashboard chrome state in a single client shell (`DashboardShell`) and derive active nav/page-title UI from the current pathname.
 - Keep page-level layout sizing and spacing adaptable through `PageContainer` props rather than duplicating wrapper layout logic per dashboard route.
+- Use a server-only in-memory connection store for Spotify OAuth metadata as an interim persistence layer until database-backed connected account storage is implemented.
+- Use signed stateless OAuth state tokens (HMAC + expiry) for Spotify callback correlation, avoiding request-handler memory persistence assumptions.
 
 ## Session Notes
 
@@ -103,3 +136,9 @@ change.
 - Dashboard home UI is now implemented with a compact welcome header, platform connection placeholders, quick transfer placeholders, and a recent activity empty state using tokenized styling only.
 - Quick transfer platform dropdowns now enforce source/destination uniqueness at the UI layer for the placeholder transfer setup panel.
 - Dashboard UI polish pass is complete: navbar subtitle hierarchy, refined sidebar depth/interaction, upgraded card elevation/hover microinteractions, music-accented platform card polish, stronger quick-transfer visual priority, and tighter recent-activity empty state; build remains green.
+- Spotify integration feature is complete for the current scope: OAuth connect/callback flow, server-side token exchange and profile fetch, authenticated Spotify profile/playlists routes, Spotify connection UI, and Spotify playlists UI with loading/error/empty/list states; build remains green.
+- Local development no longer force-redirects hosts at middleware level; host consistency for Spotify OAuth is handled operationally by using the same origin throughout a session.
+- Spotify callback no longer depends on callback-host Clerk cookies for user resolution; it now resolves the initiating user through consumed server-side OAuth state and returns to the initiating dashboard origin.
+- Spotify callback route is explicitly middleware-public and self-validates OAuth state, reducing false failures caused by auth middleware interception on callback requests.
+- Spotify callback validation no longer depends on shared in-memory pending state; signed state verification now survives request/runtime boundaries in local development.
+- Users can now explicitly remove their in-memory Spotify connection from the Connections page without reconnecting or restarting the app session.
