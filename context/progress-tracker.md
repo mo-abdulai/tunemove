@@ -9,7 +9,7 @@ change.
 
 ## Current Goal
 
-- Continue to the next scoped feature unit after completing the dashboard layout shell.
+- Continue to the next scoped feature unit after completing the dashboard home UI.
 
 ## Completed
 
@@ -51,6 +51,17 @@ change.
   `/dashboard/history`,
   `/dashboard/connections`,
   `/dashboard/settings`.
+- Completed feature `04-dashboard-home-ui` from `context/feature-specs/04-dashboard-home-ui.md`.
+- Implemented polished dashboard home modules:
+  `components/dashboard/platform-status-card.tsx`,
+  `components/dashboard/quick-transfer-card.tsx`,
+  `components/dashboard/empty-activity-card.tsx`.
+- Replaced `app/dashboard/page.tsx` placeholder content with the four required sections:
+  welcome header, connected platforms, quick transfer panel, and recent activity empty state.
+- Extended `components/dashboard/page-container.tsx` with optional width and content-spacing overrides and used `max-w-7xl` for the dashboard home layout.
+- Verified production build success with `npm run build`.
+- Refined dashboard quick transfer platform selection UX in `components/dashboard/quick-transfer-card.tsx` by disabling the selected source platform in destination options and clearing destination when source changes to the same platform.
+- Re-verified production build success with `npm run build`.
 
 ## In Progress
 
@@ -58,7 +69,7 @@ change.
 
 ## Next Up
 
-- Start the next feature spec on top of the completed auth + dashboard shell baseline.
+- Start the next feature spec on top of the completed auth + dashboard shell + dashboard home UI baseline.
 
 ## Open Questions
 
@@ -69,6 +80,7 @@ change.
 - Adopt `shadcn/ui` as the UI primitive baseline and keep generated files under `components/ui/*` unmodified unless explicitly re-generated.
 - Use `proxy.ts` (Next.js 16 convention) with Clerk middleware as the default route protection boundary, while keeping auth UI routes public by env-driven matcher patterns.
 - Keep dashboard chrome state in a single client shell (`DashboardShell`) and derive active nav/page-title UI from the current pathname.
+- Keep page-level layout sizing and spacing adaptable through `PageContainer` props rather than duplicating wrapper layout logic per dashboard route.
 
 ## Session Notes
 
@@ -79,3 +91,5 @@ change.
 - Dashboard layout foundation is now implemented with responsive sidebar behavior, route-aware navigation highlighting, and reusable page containers for all base dashboard routes.
 - Fixed dashboard sidebar toggle behavior so close/open controls now work correctly across both desktop and mobile viewports by separating desktop and mobile sidebar state handling.
 - Added sidebar icon motion polish: animated nav icons on hover/active, rotating mobile close icon, and animated `New Transfer` icon interactions with reduced-motion safeguards.
+- Dashboard home UI is now implemented with a compact welcome header, platform connection placeholders, quick transfer placeholders, and a recent activity empty state using tokenized styling only.
+- Quick transfer platform dropdowns now enforce source/destination uniqueness at the UI layer for the placeholder transfer setup panel.
