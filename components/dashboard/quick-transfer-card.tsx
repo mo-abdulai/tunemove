@@ -15,7 +15,7 @@ const PLATFORM_OPTIONS: PlatformOption[] = [
 ];
 
 const SELECT_BASE_CLASS_NAME =
-  "mt-2 w-full rounded-xl border border-surface-border bg-elevated px-3 py-2 text-sm text-copy-primary transition-colors hover:border-copy-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-base";
+  "mt-2 w-full rounded-xl border border-surface-border/80 bg-base/50 px-3 py-2.5 text-sm text-copy-primary shadow-sm shadow-base/20 transition-all duration-200 hover:border-copy-secondary/40 hover:bg-base/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-base";
 
 export function QuickTransferCard() {
   const [sourcePlatform, setSourcePlatform] = useState<PlatformValue | "">("");
@@ -40,20 +40,23 @@ export function QuickTransferCard() {
   }
 
   return (
-    <section className="rounded-2xl border border-surface-border bg-surface p-6">
+    <section className="rounded-2xl border border-surface-border/80 bg-elevated/70 p-6 shadow-md shadow-base/35 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:shadow-base/45 sm:p-7">
       <div className="max-w-2xl">
-        <h2 className="text-lg font-semibold tracking-tight text-copy-primary">
+        <p className="inline-flex items-center rounded-full border border-surface-border/70 bg-surface px-2.5 py-1 text-xs font-medium text-copy-secondary">
+          Primary action
+        </p>
+        <h2 className="mt-3 text-xl font-semibold tracking-tight text-copy-primary">
           Start a playlist transfer
         </h2>
-        <p className="mt-2 text-sm text-copy-secondary">
+        <p className="mt-2 text-sm leading-relaxed text-copy-secondary">
           Choose a source platform, destination platform, and playlist to begin.
         </p>
       </div>
-      <div className="mt-6 space-y-4">
+      <div className="mt-7 space-y-5">
         <div className="grid gap-4 lg:grid-cols-3">
           <div>
             <label
-              className="text-xs font-medium text-copy-secondary"
+              className="text-xs font-medium tracking-wide text-copy-secondary"
               htmlFor="source-platform"
             >
               Source platform
@@ -74,7 +77,7 @@ export function QuickTransferCard() {
           </div>
           <div>
             <label
-              className="text-xs font-medium text-copy-secondary"
+              className="text-xs font-medium tracking-wide text-copy-secondary"
               htmlFor="destination-platform"
             >
               Destination platform
@@ -105,7 +108,7 @@ export function QuickTransferCard() {
           </div>
           <div>
             <label
-              className="text-xs font-medium text-copy-secondary"
+              className="text-xs font-medium tracking-wide text-copy-secondary"
               htmlFor="playlist-selection"
             >
               Playlist selection
@@ -120,7 +123,7 @@ export function QuickTransferCard() {
         <div className="flex justify-end pt-1">
           <button
             type="button"
-            className="inline-flex items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-copy-primary transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+            className="inline-flex items-center rounded-xl border border-transparent bg-brand px-4 py-2 text-sm font-semibold text-copy-primary shadow-sm shadow-base/25 transition-all duration-200 hover:-translate-y-0.5 hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-base"
           >
             Start Transfer
           </button>

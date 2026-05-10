@@ -9,7 +9,7 @@ change.
 
 ## Current Goal
 
-- Continue to the next scoped feature unit after completing the dashboard home UI.
+- Continue to the next scoped feature unit after completing dashboard UI polish.
 
 ## Completed
 
@@ -62,6 +62,15 @@ change.
 - Verified production build success with `npm run build`.
 - Refined dashboard quick transfer platform selection UX in `components/dashboard/quick-transfer-card.tsx` by disabling the selected source platform in destination options and clearing destination when source changes to the same platform.
 - Re-verified production build success with `npm run build`.
+- Completed feature `05-dashboard-ui-polish` from `context/feature-specs/05-dashboard-ui-polish.md`.
+- Enhanced dashboard navbar hierarchy and presence with route-aware subtitles, subtle blur, improved control polish, and stronger visual separation.
+- Refined sidebar depth and navigation polish with elevated surface treatment, improved active/hover states, smoother transitions, and upgraded CTA button interactions.
+- Polished dashboard home cards (platform status, quick transfer, recent activity) with subtle hover lift, stronger elevation, softer borders, cleaner spacing, and calm microinteractions.
+- Added restrained Spotify/Apple visual emphasis to connected platform cards while preserving the dark minimal aesthetic.
+- Increased quick transfer panel prominence through hierarchy/spacing updates and refined control alignment without adding transfer business logic.
+- Improved recent activity empty state density and icon container, plus a subtle CTA to start a transfer.
+- Verified no raw Tailwind neutral palettes or hardcoded colors were introduced in the dashboard polish changes.
+- Verified production build success with `npm run build`.
 
 ## In Progress
 
@@ -69,7 +78,7 @@ change.
 
 ## Next Up
 
-- Start the next feature spec on top of the completed auth + dashboard shell + dashboard home UI baseline.
+- Start the next feature spec on top of the completed auth + dashboard shell + dashboard home + dashboard polish baseline.
 
 ## Open Questions
 
@@ -93,3 +102,4 @@ change.
 - Added sidebar icon motion polish: animated nav icons on hover/active, rotating mobile close icon, and animated `New Transfer` icon interactions with reduced-motion safeguards.
 - Dashboard home UI is now implemented with a compact welcome header, platform connection placeholders, quick transfer placeholders, and a recent activity empty state using tokenized styling only.
 - Quick transfer platform dropdowns now enforce source/destination uniqueness at the UI layer for the placeholder transfer setup panel.
+- Dashboard UI polish pass is complete: navbar subtitle hierarchy, refined sidebar depth/interaction, upgraded card elevation/hover microinteractions, music-accented platform card polish, stronger quick-transfer visual priority, and tighter recent-activity empty state; build remains green.
