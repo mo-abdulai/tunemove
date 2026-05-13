@@ -23,11 +23,10 @@ export async function POST(request: NextRequest) {
     return buildUnauthorizedResponse();
   }
 
-  clearSpotifyConnection(userId);
+  await clearSpotifyConnection(userId);
 
   return NextResponse.redirect(
     new URL("/dashboard/connections?spotify=disconnected", request.url),
     { status: 303 },
   );
 }
-

@@ -22,7 +22,10 @@ export type SpotifyPlaylistResponse = {
   images: Array<{
     url: string;
   }>;
-  tracks: {
+  tracks?: {
+    total: number;
+  };
+  items?: {
     total: number;
   };
   owner: {
@@ -68,4 +71,3 @@ export type SpotifyConnection = {
   profile: SpotifyProfile;
   connectedAt: string;
 };
-

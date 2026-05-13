@@ -11,11 +11,22 @@ type ConnectionsPageProps = {
   }>;
 };
 
-function getConnectionStatusMessage(params: { spotify?: string; reason?: string }) {
-  if (params.spotify === "connected") {
+function getConnectionStatusMessage(
+  params: { spotify?: string; reason?: string },
+  isConnected: boolean,
+) {
+  if (params.spotify === "connected" && isConnected) {
     return {
       kind: "success" as const,
       message: "Spotify connected successfully.",
+    };
+  }
+
+  if (params.spotify === "connected" && !isConnected) {
+    return {
+      kind: "error" as const,
+      message:
+        "Spotify callback completed, but connection data was not persisted. This is usually a local-host mismatch issue (localhost vs 127.0.0.1). Reconnect using one host consistently.",
     };
   }
 
@@ -94,11 +105,14 @@ function getConnectionStatusMessage(params: { spotify?: string; reason?: string 
 
 export default async function ConnectionsPage({ searchParams }: ConnectionsPageProps) {
   const { userId } = await auth();
-  const spotifyConnection = userId ? getSpotifyConnection(userId) : null;
+  const spotifyConnection = userId ? await getSpotifyConnection(userId) : null;
   const isConnected = Boolean(spotifyConnection);
   const resolvedSearchParams = (await searchParams) ?? {};
-  const statusMessage = getConnectionStatusMessage(resolvedSearchParams);
-
+  const statusMessage = getConnectionStatusMessage(
+    resolvedSearchParams,
+    isConnected,
+  );
+  
   return (
     <PageContainer
       title="Connections"

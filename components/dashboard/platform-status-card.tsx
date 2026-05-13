@@ -6,6 +6,7 @@ type PlatformStatusCardProps = {
   platformName: string;
   status: string;
   actionLabel: string;
+  actionHref?: string;
   icon: LucideIcon;
   accentTextClassName: string;
   accentSurfaceClassName: string;
@@ -16,6 +17,7 @@ export function PlatformStatusCard({
   platformName,
   status,
   actionLabel,
+  actionHref,
   icon: Icon,
   accentTextClassName,
   accentSurfaceClassName,
@@ -64,12 +66,21 @@ export function PlatformStatusCard({
         </div>
       </div>
       <div className="mt-5 flex justify-end">
-        <button
-          type="button"
-          className="inline-flex items-center rounded-xl border border-surface-border/80 bg-elevated/80 px-3 py-1.5 text-xs font-medium text-copy-secondary shadow-sm shadow-base/25 transition-all duration-200 hover:border-copy-secondary/40 hover:bg-elevated hover:text-copy-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-base"
-        >
-          {actionLabel}
-        </button>
+        {actionHref ? (
+          <a
+            href={actionHref}
+            className="inline-flex items-center rounded-xl border border-surface-border/80 bg-elevated/80 px-3 py-1.5 text-xs font-medium text-copy-secondary shadow-sm shadow-base/25 transition-all duration-200 hover:border-copy-secondary/40 hover:bg-elevated hover:text-copy-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+          >
+            {actionLabel}
+          </a>
+        ) : (
+          <button
+            type="button"
+            className="inline-flex items-center rounded-xl border border-surface-border/80 bg-elevated/80 px-3 py-1.5 text-xs font-medium text-copy-secondary shadow-sm shadow-base/25 transition-all duration-200 hover:border-copy-secondary/40 hover:bg-elevated hover:text-copy-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+          >
+            {actionLabel}
+          </button>
+        )}
       </div>
     </article>
   );

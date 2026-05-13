@@ -1,11 +1,17 @@
+import { auth } from "@clerk/nextjs/server";
 import { Disc3, Music2 } from "lucide-react";
 
 import { EmptyActivityCard } from "@/components/dashboard/empty-activity-card";
 import { PageContainer } from "@/components/dashboard/page-container";
 import { PlatformStatusCard } from "@/components/dashboard/platform-status-card";
 import { QuickTransferCard } from "@/components/dashboard/quick-transfer-card";
+import { getSpotifyConnection } from "@/lib/spotify-connection-store";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { userId } = await auth();
+  const spotifyConnection = userId ? await getSpotifyConnection(userId) : null;
+  const isSpotifyConnected = Boolean(spotifyConnection);
+
   return (
     <PageContainer
       title="Welcome back"
@@ -31,8 +37,11 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <PlatformStatusCard
             platformName="Spotify"
-            status="Not connected"
-            actionLabel="Connect Spotify"
+            status={isSpotifyConnected ? "Connected" : "Not connected"}
+            actionLabel={
+              isSpotifyConnected ? "Reconnect Spotify" : "Connect Spotify"
+            }
+            actionHref="/api/spotify/connect"
             icon={Disc3}
             accentTextClassName="text-spotify"
             accentSurfaceClassName="bg-spotify/10"

@@ -7,6 +7,21 @@ import {
   fetchSpotifyCurrentUserProfile,
   SpotifyApiError,
 } from "@/lib/spotify";
+import type { SpotifyProfile } from "@/types/spotify";
+
+function getConfiguredSpotifyOrigin() {
+  const redirectUri = process.env.SPOTIFY_REDIRECT_URI?.trim();
+
+  if (!redirectUri) {
+    return null;
+  }
+
+  try {
+    return new URL(redirectUri).origin;
+  } catch {
+    return null;
+  }
+}
 
 function buildConnectionsRedirect(
   origin: string,
@@ -42,7 +57,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const returnToOrigin = verifiedState.payload.returnToOrigin || callbackOrigin;
+  const configuredSpotifyOrigin = getConfiguredSpotifyOrigin();
+  const returnToOrigin =
+    configuredSpotifyOrigin ||
+    verifiedState.payload.returnToOrigin ||
+    callbackOrigin;
 
   if (spotifyError) {
     return buildConnectionsRedirect(returnToOrigin, "cancelled", spotifyError);
@@ -54,11 +73,26 @@ export async function GET(request: NextRequest) {
 
   try {
     const tokenResponse = await exchangeSpotifyCodeForTokens({ code });
-    const profile = await fetchSpotifyCurrentUserProfile(
-      tokenResponse.access_token,
-    );
+    let profile: SpotifyProfile = {
+      id: "spotify-user",
+      displayName: null,
+      email: null,
+      imageUrl: null,
+    };
 
-    setSpotifyConnection(verifiedState.payload.userId, {
+    try {
+      profile = await fetchSpotifyCurrentUserProfile(tokenResponse.access_token);
+    } catch (error) {
+      if (error instanceof SpotifyApiError) {
+        if (error.status !== 401 && error.status !== 403) {
+          throw error;
+        }
+      } else {
+        throw error;
+      }
+    }
+
+    await setSpotifyConnection(verifiedState.payload.userId, {
       accessToken: tokenResponse.access_token,
       refreshToken: tokenResponse.refresh_token ?? null,
       expiresAt: Date.now() + tokenResponse.expires_in * 1000,

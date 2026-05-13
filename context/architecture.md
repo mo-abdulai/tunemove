@@ -52,7 +52,7 @@ Stores:
 - Active filters
 - Dashboard preferences
 - External APIs
-- Temporary Spotify OAuth connection metadata (access token, refresh token, expiry, and normalized profile) in a server-only in-memory store until database-backed connected-account persistence is implemented.
+- Temporary Spotify OAuth connection metadata (access token, refresh token, expiry, and normalized profile) in an encrypted, HTTP-only server cookie until database-backed connected-account persistence is implemented.
 - Signed Spotify OAuth state payloads (user ID, return origin, nonce, and issued-at) validated server-side to correlate callbacks without relying on shared in-memory pending-state storage across request handlers.
 
 Spotify and Apple Music remain the source of truth for:

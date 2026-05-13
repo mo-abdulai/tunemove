@@ -4,6 +4,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSignedSpotifyOAuthState } from "@/lib/spotify-oauth-state";
 import { buildSpotifyAuthorizationUrl } from "@/lib/spotify";
 
+function getConfiguredSpotifyOrigin() {
+  const redirectUri = process.env.SPOTIFY_REDIRECT_URI?.trim();
+
+  if (!redirectUri) {
+    return null;
+  }
+
+  try {
+    return new URL(redirectUri).origin;
+  } catch {
+    return null;
+  }
+}
+
 function buildUnauthorizedResponse() {
   return NextResponse.json(
     {
@@ -38,9 +52,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const configuredSpotifyOrigin = getConfiguredSpotifyOrigin();
+    const returnToOrigin = configuredSpotifyOrigin ?? request.nextUrl.origin;
+
     const state = createSignedSpotifyOAuthState({
       userId,
-      returnToOrigin: request.nextUrl.origin,
+      returnToOrigin,
     });
     const authorizationUrl = buildSpotifyAuthorizationUrl(state);
     return NextResponse.redirect(authorizationUrl);

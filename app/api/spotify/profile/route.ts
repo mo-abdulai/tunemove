@@ -65,10 +65,10 @@ export async function GET() {
 
   try {
     const profile = await fetchSpotifyCurrentUserProfile(accessToken);
-    const currentConnection = getSpotifyConnection(userId);
+    const currentConnection = await getSpotifyConnection(userId);
 
     if (currentConnection) {
-      setSpotifyConnection(userId, {
+      await setSpotifyConnection(userId, {
         ...currentConnection,
         profile,
       });
@@ -80,11 +80,10 @@ export async function GET() {
     });
   } catch (error) {
     if (error instanceof SpotifyApiError && error.status === 401) {
-      clearSpotifyConnection(userId);
+      await clearSpotifyConnection(userId);
       return buildNotConnectedResponse();
     }
 
     return buildFetchFailedResponse();
   }
 }
-
