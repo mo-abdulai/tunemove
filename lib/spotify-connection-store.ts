@@ -26,12 +26,17 @@ function buildUpdatedConnectionFromTokenResponse(
   currentConnection: SpotifyConnection,
   tokenResponse: SpotifyTokenResponse,
 ): SpotifyConnection {
+  const normalizedScope =
+    typeof tokenResponse.scope === "string" && tokenResponse.scope.trim().length > 0
+      ? tokenResponse.scope
+      : currentConnection.scope;
+
   return {
     ...currentConnection,
     accessToken: tokenResponse.access_token,
     refreshToken: tokenResponse.refresh_token ?? currentConnection.refreshToken,
     tokenType: tokenResponse.token_type,
-    scope: tokenResponse.scope,
+    scope: normalizedScope,
     expiresAt: Date.now() + tokenResponse.expires_in * 1000,
   };
 }

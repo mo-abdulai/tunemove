@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import {
   clearSpotifyConnection,
@@ -7,12 +7,15 @@ import {
   getValidSpotifyAccessToken,
 } from "@/lib/spotify-connection-store";
 import {
-  fetchSpotifyCurrentUserPlaylists,
+  fetchSpotifyPlaylistWithTracks,
   SpotifyApiError,
 } from "@/lib/spotify";
 
-const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 50;
+type PlaylistTracksRouteContext = {
+  params: Promise<{
+    playlistId: string;
+  }>;
+};
 
 function buildUnauthorizedResponse() {
   return NextResponse.json(
@@ -27,13 +30,13 @@ function buildUnauthorizedResponse() {
   );
 }
 
-function buildInvalidQueryResponse() {
+function buildInvalidPlaylistIdResponse() {
   return NextResponse.json(
     {
       success: false,
       error: {
-        code: "INVALID_QUERY_PARAMS",
-        message: "Query parameters are invalid.",
+        code: "INVALID_PLAYLIST_ID",
+        message: "Playlist id is invalid.",
       },
     },
     { status: 400 },
@@ -53,13 +56,26 @@ function buildNotConnectedResponse() {
   );
 }
 
+function buildPlaylistNotFoundResponse() {
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: "SPOTIFY_PLAYLIST_NOT_FOUND",
+        message: "Spotify playlist could not be found.",
+      },
+    },
+    { status: 404 },
+  );
+}
+
 function buildFetchFailedResponse() {
   return NextResponse.json(
     {
       success: false,
       error: {
-        code: "SPOTIFY_PLAYLISTS_FETCH_FAILED",
-        message: "Unable to fetch Spotify playlists.",
+        code: "SPOTIFY_PLAYLIST_TRACKS_FETCH_FAILED",
+        message: "Unable to fetch Spotify playlist tracks.",
       },
     },
     { status: 502 },
@@ -90,6 +106,20 @@ function buildInsufficientScopeResponse() {
       error: {
         code: "SPOTIFY_INSUFFICIENT_SCOPE",
         message: "Spotify token is missing required playlist-read permissions.",
+      },
+    },
+    { status: 403 },
+  );
+}
+
+function buildPlaylistAccessDeniedResponse() {
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: "SPOTIFY_PLAYLIST_ACCESS_DENIED",
+        message:
+          "Spotify only allows playlist items for playlists you own or collaborate on.",
       },
     },
     { status: 403 },
@@ -142,60 +172,55 @@ function buildInvalidSpotifyPayloadResponse() {
       success: false,
       error: {
         code: "SPOTIFY_RESPONSE_INVALID",
-        message: "Spotify returned an invalid playlists payload.",
+        message: "Spotify returned an invalid playlist tracks payload.",
       },
     },
     { status: 502 },
   );
 }
 
-function logSpotifyPlaylistFailure(
+function logSpotifyPlaylistTracksFailure(
   message: string,
   details: Record<string, unknown>,
 ) {
-  console.error("[spotify-playlists] " + message, details);
+  console.error("[spotify-playlist-tracks] " + message, details);
 }
 
-function parseNumberParam(
-  value: string | null,
-  fallback: number,
-  min: number,
-  max: number,
+function normalizePlaylistId(rawPlaylistId: string) {
+  const trimmedPlaylistId = rawPlaylistId.trim();
+  return trimmedPlaylistId.length > 0 ? trimmedPlaylistId : null;
+}
+
+function hasPlaylistReadScope(scopeValue: string | null | undefined) {
+  if (!scopeValue) {
+    return false;
+  }
+
+  const scopes = new Set(
+    scopeValue
+      .split(/\s+/)
+      .map((scope) => scope.trim())
+      .filter((scope) => scope.length > 0),
+  );
+
+  return scopes.has("playlist-read-private");
+}
+
+export async function GET(
+  _request: Request,
+  context: PlaylistTracksRouteContext,
 ) {
-  if (value === null) {
-    return fallback;
-  }
-
-  const parsedValue = Number(value);
-
-  if (!Number.isInteger(parsedValue) || parsedValue < min || parsedValue > max) {
-    return null;
-  }
-
-  return parsedValue;
-}
-
-export async function GET(request: NextRequest) {
   const { userId } = await auth();
 
   if (!userId) {
     return buildUnauthorizedResponse();
   }
-  const limit = parseNumberParam(
-    request.nextUrl.searchParams.get("limit"),
-    DEFAULT_LIMIT,
-    1,
-    MAX_LIMIT,
-  );
-  const offset = parseNumberParam(
-    request.nextUrl.searchParams.get("offset"),
-    0,
-    0,
-    Number.MAX_SAFE_INTEGER,
-  );
 
-  if (limit === null || offset === null) {
-    return buildInvalidQueryResponse();
+  const { playlistId: rawPlaylistId } = await context.params;
+  const playlistId = normalizePlaylistId(rawPlaylistId);
+
+  if (!playlistId) {
+    return buildInvalidPlaylistIdResponse();
   }
 
   const accessToken = await getValidSpotifyAccessToken(userId);
@@ -204,37 +229,42 @@ export async function GET(request: NextRequest) {
   }
 
   const spotifyConnection = await getSpotifyConnection(userId);
+  const tokenHasPlaylistReadScope = hasPlaylistReadScope(
+    spotifyConnection?.scope ?? null,
+  );
 
   try {
-    const { playlists } = await fetchSpotifyCurrentUserPlaylists({
+    const { playlist, tracks, total } = await fetchSpotifyPlaylistWithTracks({
       accessToken,
-      limit,
-      offset,
-      spotifyUserId: spotifyConnection?.profile.id ?? null,
+      playlistId,
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        playlists,
+        playlist,
+        tracks,
+        total,
       },
     });
   } catch (error) {
     if (error instanceof SpotifyApiError) {
       if (error.code.endsWith("_TIMEOUT")) {
-        logSpotifyPlaylistFailure("request timeout", {
+        logSpotifyPlaylistTracksFailure("request timeout", {
           spotifyCode: error.code,
           spotifyStatus: error.status,
           spotifyMessage: error.message,
+          playlistId,
         });
         return buildTimeoutResponse();
       }
 
       if (error.code.endsWith("_NETWORK")) {
-        logSpotifyPlaylistFailure("network failure", {
+        logSpotifyPlaylistTracksFailure("network failure", {
           spotifyCode: error.code,
           spotifyStatus: error.status,
           spotifyMessage: error.message,
+          playlistId,
         });
         return buildNetworkErrorResponse();
       }
@@ -245,45 +275,63 @@ export async function GET(request: NextRequest) {
       }
 
       if (error.status === 403) {
-        return buildInsufficientScopeResponse();
+        const errorMessage = error.message.toLowerCase();
+
+        if (errorMessage.includes("scope") && !tokenHasPlaylistReadScope) {
+          return buildInsufficientScopeResponse();
+        }
+
+        return buildPlaylistAccessDeniedResponse();
+      }
+
+      if (error.status === 404) {
+        return buildPlaylistNotFoundResponse();
       }
 
       if (error.status === 429) {
         return buildRateLimitedResponse(error.retryAfterSeconds);
       }
 
-      if (error.code === "SPOTIFY_PLAYLISTS_RESPONSE_INVALID") {
-        logSpotifyPlaylistFailure("invalid upstream payload", {
+      if (
+        error.code === "SPOTIFY_PLAYLIST_RESPONSE_INVALID" ||
+        error.code === "SPOTIFY_PLAYLIST_TRACKS_RESPONSE_INVALID"
+      ) {
+        logSpotifyPlaylistTracksFailure("invalid upstream payload", {
           spotifyCode: error.code,
           spotifyStatus: error.status,
           spotifyMessage: error.message,
+          playlistId,
         });
         return buildInvalidSpotifyPayloadResponse();
       }
 
       if (error.status >= 500 && error.status <= 599) {
-        logSpotifyPlaylistFailure("upstream unavailable", {
+        logSpotifyPlaylistTracksFailure("upstream unavailable", {
           spotifyCode: error.code,
           spotifyStatus: error.status,
           spotifyMessage: error.message,
+          playlistId,
         });
         return buildUpstreamUnavailableResponse();
       }
 
-      logSpotifyPlaylistFailure("unexpected spotify api error", {
+      logSpotifyPlaylistTracksFailure("unexpected spotify api error", {
         spotifyCode: error.code,
         spotifyStatus: error.status,
         spotifyMessage: error.message,
+        playlistId,
       });
       return buildFetchFailedResponse();
     }
 
-    logSpotifyPlaylistFailure("unexpected non-spotify error", {
+    logSpotifyPlaylistTracksFailure("unexpected non-spotify error", {
       error:
         error instanceof Error
           ? { name: error.name, message: error.message }
           : String(error),
+      playlistId,
     });
+
     return buildFetchFailedResponse();
   }
 }

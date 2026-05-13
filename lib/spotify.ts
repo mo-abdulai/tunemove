@@ -1,5 +1,8 @@
 import type {
   SpotifyPlaylist,
+  SpotifyPlaylistResponse,
+  SpotifyPlaylistTrack,
+  SpotifyPlaylistTracksResponse,
   SpotifyPlaylistsResponse,
   SpotifyProfile,
   SpotifyProfileResponse,
@@ -49,10 +52,19 @@ type FetchPlaylistsInput = {
   accessToken: string;
   limit?: number;
   offset?: number;
+  spotifyUserId?: string | null;
+};
+
+type FetchPlaylistTracksInput = {
+  accessToken: string;
+  playlistId: string;
 };
 
 type SpotifyPlaylistTrackTotalResponse = {
   tracks?: {
+    total?: number | null;
+  } | null;
+  items?: {
     total?: number | null;
   } | null;
 };
@@ -64,6 +76,12 @@ type SpotifyPlaylistsResult = {
   offset: number;
   next: string | null;
   previous: string | null;
+};
+
+type SpotifyPlaylistWithTracksResult = {
+  playlist: SpotifyPlaylist;
+  tracks: SpotifyPlaylistTrack[];
+  total: number;
 };
 
 function getSpotifyConfig(): SpotifyConfig {
@@ -222,6 +240,21 @@ function normalizeOptionalText(value: string | null | undefined) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function normalizeSpotifyIdForComparison(value: string | null | undefined) {
+  const normalizedValue = normalizeOptionalText(value);
+  return normalizedValue ? normalizedValue.toLowerCase() : null;
+}
+
+function isKnownSpotifyUserId(userId: string | null | undefined) {
+  const normalizedUserId = normalizeOptionalText(userId);
+
+  if (!normalizedUserId) {
+    return false;
+  }
+
+  return normalizedUserId !== "spotify-user";
+}
+
 function shouldRetrySpotifyRequest(error: SpotifyApiError) {
   if (error.status === 429) {
     return true;
@@ -246,6 +279,57 @@ function getSpotifyRetryDelayMs(error: SpotifyApiError, attempt: number) {
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchSpotifyGetRequestWithRetries({
+  requestUrl,
+  accessToken,
+  errorCode,
+}: {
+  requestUrl: string;
+  accessToken: string;
+  errorCode: string;
+}) {
+  for (
+    let attempt = 1;
+    attempt <= SPOTIFY_TRANSIENT_ERROR_MAX_RETRIES + 1;
+    attempt += 1
+  ) {
+    try {
+      const response = await fetchSpotifyWithTimeout(
+        requestUrl,
+        {
+          method: "GET",
+          headers: getSpotifyRequestHeaders(accessToken),
+          cache: "no-store",
+        },
+        errorCode,
+      );
+
+      await assertSpotifyResponseOk(response, errorCode);
+      return response;
+    } catch (error) {
+      if (!(error instanceof SpotifyApiError)) {
+        throw error;
+      }
+
+      if (
+        attempt > SPOTIFY_TRANSIENT_ERROR_MAX_RETRIES ||
+        !shouldRetrySpotifyRequest(error)
+      ) {
+        throw error;
+      }
+
+      const delayMs = getSpotifyRetryDelayMs(error, attempt);
+      await sleep(delayMs);
+    }
+  }
+
+  throw new SpotifyApiError(
+    "Unable to complete Spotify request.",
+    502,
+    errorCode,
+  );
 }
 
 export function buildSpotifyAuthorizationUrl(state: string) {
@@ -347,6 +431,7 @@ export async function fetchSpotifyCurrentUserProfile(
 
 export function normalizeSpotifyPlaylist(
   playlist: SpotifyPlaylistsResponse["items"][number] | null | undefined,
+  currentSpotifyUserId?: string | null,
 ): SpotifyPlaylist | null {
   if (!playlist || typeof playlist.id !== "string") {
     return null;
@@ -358,6 +443,16 @@ export function normalizeSpotifyPlaylist(
 
   const rawTrackTotal = playlist.tracks?.total;
   const rawItemsTotal = playlist.items?.total;
+  const ownerId = normalizeOptionalText(playlist.owner?.id);
+  const isCollaborative = Boolean(playlist.collaborative);
+  const normalizedCurrentSpotifyUserId = normalizeOptionalText(currentSpotifyUserId);
+  const comparableOwnerId = normalizeSpotifyIdForComparison(ownerId);
+  const comparableCurrentSpotifyUserId = normalizeSpotifyIdForComparison(
+    normalizedCurrentSpotifyUserId,
+  );
+  const canAccessTracks = isKnownSpotifyUserId(normalizedCurrentSpotifyUserId)
+    ? comparableOwnerId === comparableCurrentSpotifyUserId || isCollaborative
+    : null;
   const trackCount =
     typeof rawTrackTotal === "number" && Number.isFinite(rawTrackTotal)
       ? rawTrackTotal
@@ -372,7 +467,40 @@ export function normalizeSpotifyPlaylist(
     imageUrl: getFirstImageUrl(playlist.images),
     trackCount,
     ownerName: normalizeOptionalText(playlist.owner?.display_name),
+    ownerId,
+    isCollaborative,
+    canAccessTracks,
     externalUrl: normalizeOptionalText(playlist.external_urls?.spotify),
+  };
+}
+
+function normalizeSpotifyPlaylistTrack(
+  trackItem: SpotifyPlaylistTracksResponse["items"][number] | null | undefined,
+  position: number,
+): SpotifyPlaylistTrack {
+  const normalizedTrackItem = trackItem?.item ?? trackItem?.track;
+  const title =
+    normalizeOptionalText(normalizedTrackItem?.name) ?? "Unavailable track";
+  const albumName = normalizeOptionalText(normalizedTrackItem?.album?.name);
+  const rawDurationMs = normalizedTrackItem?.duration_ms;
+  const rawAddedAt = trackItem?.added_at;
+  const durationMs =
+    typeof rawDurationMs === "number" &&
+    Number.isFinite(rawDurationMs) &&
+    rawDurationMs >= 0
+      ? rawDurationMs
+      : null;
+  const addedAt =
+    typeof rawAddedAt === "string" && Number.isFinite(Date.parse(rawAddedAt))
+      ? rawAddedAt
+      : null;
+
+  return {
+    position,
+    title,
+    albumName,
+    addedAt,
+    durationMs,
   };
 }
 
@@ -384,7 +512,7 @@ async function fetchSpotifyPlaylistTrackTotal({
   playlistId: string;
 }): Promise<number | null> {
   const params = new URLSearchParams({
-    fields: "tracks.total",
+    fields: "tracks.total,items.total",
   });
   const requestUrl = `${SPOTIFY_API_BASE_URL}/playlists/${encodeURIComponent(playlistId)}?${params.toString()}`;
 
@@ -408,15 +536,209 @@ async function fetchSpotifyPlaylistTrackTotal({
     return null;
   }
 
-  return typeof data.tracks?.total === "number" && Number.isFinite(data.tracks.total)
-    ? data.tracks.total
-    : null;
+  if (
+    typeof data.tracks?.total === "number" &&
+    Number.isFinite(data.tracks.total)
+  ) {
+    return data.tracks.total;
+  }
+
+  if (
+    typeof data.items?.total === "number" &&
+    Number.isFinite(data.items.total)
+  ) {
+    return data.items.total;
+  }
+
+  return null;
+}
+
+async function fetchSpotifyPlaylistDetails({
+  accessToken,
+  playlistId,
+}: FetchPlaylistTracksInput): Promise<SpotifyPlaylist> {
+  const params = new URLSearchParams({
+    fields:
+      "id,name,description,images,owner(id,display_name),external_urls(spotify),collaborative,public",
+  });
+  const requestUrl = `${SPOTIFY_API_BASE_URL}/playlists/${encodeURIComponent(playlistId)}?${params.toString()}`;
+
+  const response = await fetchSpotifyGetRequestWithRetries({
+    requestUrl,
+    accessToken,
+    errorCode: "SPOTIFY_PLAYLIST_FETCH_FAILED",
+  });
+
+  let data: SpotifyPlaylistResponse;
+  try {
+    data = (await response.json()) as SpotifyPlaylistResponse;
+  } catch {
+    throw new SpotifyApiError(
+      "Spotify playlist payload could not be parsed.",
+      502,
+      "SPOTIFY_PLAYLIST_RESPONSE_INVALID",
+    );
+  }
+
+  const playlist = normalizeSpotifyPlaylist(data);
+  if (!playlist) {
+    throw new SpotifyApiError(
+      "Spotify playlist payload is invalid.",
+      502,
+      "SPOTIFY_PLAYLIST_RESPONSE_INVALID",
+    );
+  }
+
+  return playlist;
+}
+
+async function fetchSpotifyPlaylistTracks({
+  accessToken,
+  playlistId,
+}: FetchPlaylistTracksInput): Promise<SpotifyPlaylistTrack[]> {
+  async function fetchTracksByEndpointPath(
+    endpointPath: "items" | "tracks",
+  ): Promise<SpotifyPlaylistTrack[]> {
+    const tracks: SpotifyPlaylistTrack[] = [];
+    const visitedPageUrls = new Set<string>();
+    const queryParams = new URLSearchParams({
+      limit: "100",
+      offset: "0",
+      additional_types: "track",
+      fields:
+        "items(added_at,item(name,duration_ms,album(name)),track(name,duration_ms,album(name))),next",
+    });
+    let nextPageUrl: string | null = `${SPOTIFY_API_BASE_URL}/playlists/${encodeURIComponent(playlistId)}/${endpointPath}?${queryParams.toString()}`;
+
+    while (nextPageUrl) {
+      if (visitedPageUrls.has(nextPageUrl)) {
+        throw new SpotifyApiError(
+          "Spotify playlist track pagination loop detected.",
+          502,
+          "SPOTIFY_PLAYLIST_TRACKS_RESPONSE_INVALID",
+        );
+      }
+      visitedPageUrls.add(nextPageUrl);
+
+      const response = await fetchSpotifyGetRequestWithRetries({
+        requestUrl: nextPageUrl,
+        accessToken,
+        errorCode: "SPOTIFY_PLAYLIST_TRACKS_FETCH_FAILED",
+      });
+
+      let data: SpotifyPlaylistTracksResponse;
+      try {
+        data = (await response.json()) as SpotifyPlaylistTracksResponse;
+      } catch {
+        throw new SpotifyApiError(
+          "Spotify playlist tracks payload could not be parsed.",
+          502,
+          "SPOTIFY_PLAYLIST_TRACKS_RESPONSE_INVALID",
+        );
+      }
+
+      if (!Array.isArray(data.items)) {
+        throw new SpotifyApiError(
+          "Spotify playlist tracks payload is invalid.",
+          502,
+          "SPOTIFY_PLAYLIST_TRACKS_RESPONSE_INVALID",
+        );
+      }
+
+      for (const item of data.items) {
+        tracks.push(normalizeSpotifyPlaylistTrack(item, tracks.length + 1));
+      }
+
+      if (typeof data.next === "string" && data.next.trim().length > 0) {
+        nextPageUrl = data.next;
+        continue;
+      }
+
+      nextPageUrl = null;
+    }
+
+    return tracks;
+  }
+
+  try {
+    return await fetchTracksByEndpointPath("items");
+  } catch (error) {
+    if (!(error instanceof SpotifyApiError)) {
+      throw error;
+    }
+
+    if (error.status !== 400 && error.status !== 403 && error.status !== 404) {
+      throw error;
+    }
+  }
+
+  const tracks: SpotifyPlaylistTrack[] = [];
+  const visitedPageUrls = new Set<string>();
+  let nextPageUrl: string | null = `${SPOTIFY_API_BASE_URL}/playlists/${encodeURIComponent(playlistId)}/tracks?${new URLSearchParams(
+    {
+      limit: "100",
+      offset: "0",
+      additional_types: "track",
+      fields:
+        "items(added_at,item(name,duration_ms,album(name)),track(name,duration_ms,album(name))),next",
+    },
+  ).toString()}`;
+
+  while (nextPageUrl) {
+    if (visitedPageUrls.has(nextPageUrl)) {
+      throw new SpotifyApiError(
+        "Spotify playlist track pagination loop detected.",
+        502,
+        "SPOTIFY_PLAYLIST_TRACKS_RESPONSE_INVALID",
+      );
+    }
+    visitedPageUrls.add(nextPageUrl);
+
+    const response = await fetchSpotifyGetRequestWithRetries({
+      requestUrl: nextPageUrl,
+      accessToken,
+      errorCode: "SPOTIFY_PLAYLIST_TRACKS_FETCH_FAILED",
+    });
+
+    let data: SpotifyPlaylistTracksResponse;
+    try {
+      data = (await response.json()) as SpotifyPlaylistTracksResponse;
+    } catch {
+      throw new SpotifyApiError(
+        "Spotify playlist tracks payload could not be parsed.",
+        502,
+        "SPOTIFY_PLAYLIST_TRACKS_RESPONSE_INVALID",
+      );
+    }
+
+    if (!Array.isArray(data.items)) {
+      throw new SpotifyApiError(
+        "Spotify playlist tracks payload is invalid.",
+        502,
+        "SPOTIFY_PLAYLIST_TRACKS_RESPONSE_INVALID",
+      );
+    }
+
+    for (const item of data.items) {
+      tracks.push(normalizeSpotifyPlaylistTrack(item, tracks.length + 1));
+    }
+
+    if (typeof data.next === "string" && data.next.trim().length > 0) {
+      nextPageUrl = data.next;
+      continue;
+    }
+
+    nextPageUrl = null;
+  }
+
+  return tracks;
 }
 
 export async function fetchSpotifyCurrentUserPlaylists({
   accessToken,
   limit = 20,
   offset = 0,
+  spotifyUserId = null,
 }: FetchPlaylistsInput): Promise<SpotifyPlaylistsResult> {
   const params = new URLSearchParams({
     limit: String(limit),
@@ -459,7 +781,7 @@ export async function fetchSpotifyCurrentUserPlaylists({
       }
 
       const playlists = data.items
-        .map(normalizeSpotifyPlaylist)
+        .map((playlist) => normalizeSpotifyPlaylist(playlist, spotifyUserId))
         .filter((playlist): playlist is SpotifyPlaylist => playlist !== null);
 
       const zeroTrackPlaylists = playlists.filter(
@@ -526,4 +848,30 @@ export async function fetchSpotifyCurrentUserPlaylists({
     502,
     "SPOTIFY_PLAYLISTS_FETCH_FAILED",
   );
+}
+
+export async function fetchSpotifyPlaylistWithTracks({
+  accessToken,
+  playlistId,
+}: FetchPlaylistTracksInput): Promise<SpotifyPlaylistWithTracksResult> {
+  const [playlist, tracks] = await Promise.all([
+    fetchSpotifyPlaylistDetails({
+      accessToken,
+      playlistId,
+    }),
+    fetchSpotifyPlaylistTracks({
+      accessToken,
+      playlistId,
+    }),
+  ]);
+
+  if (playlist.trackCount === 0 && tracks.length > 0) {
+    playlist.trackCount = tracks.length;
+  }
+
+  return {
+    playlist,
+    tracks,
+    total: tracks.length,
+  };
 }

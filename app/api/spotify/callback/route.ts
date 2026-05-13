@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       refreshToken: tokenResponse.refresh_token ?? null,
       expiresAt: Date.now() + tokenResponse.expires_in * 1000,
       tokenType: tokenResponse.token_type,
-      scope: tokenResponse.scope,
+      scope: tokenResponse.scope ?? "",
       profile,
       connectedAt: new Date().toISOString(),
     });

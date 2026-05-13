@@ -134,6 +134,16 @@ change.
 - Re-verified lint/build success with `npm run lint` and `npm run build`.
 - Updated Spotify playlist response typing/normalization to support both `tracks.total` and `items.total` from upstream list payload variants, reducing false `0 tracks` displays.
 - Re-verified lint/build success with `npm run lint` and `npm run build`.
+- Added Spotify playlist-details support in `lib/spotify.ts` with playlist metadata fetch + paginated full-track retrieval and normalization (track number, title, album, added date, duration).
+- Added authenticated dynamic API route `GET /api/spotify/playlists/[playlistId]/tracks` with structured error handling for not-connected, not-found, insufficient-scope, rate-limit, timeout, network, invalid payload, and upstream-unavailable cases.
+- Added a new playlist tracks dashboard route at `/dashboard/playlists/[playlistId]` with loading state and a track list table showing number, title, album, date added, and track length.
+- Updated playlist cards in `components/dashboard/spotify-playlists-panel.tsx` to navigate to the new playlist-details route while preserving external "Open in Spotify" links.
+- Fixed playlist-track access failures for followed non-collaborative playlists by adding ownership/collaboration access metadata to playlist responses and disabling details navigation for playlists that Spotify will reject.
+- Updated `GET /api/spotify/playlists/[playlistId]/tracks` to classify `403` responses into scope failures vs playlist access-denied, and added `SPOTIFY_PLAYLIST_ACCESS_DENIED` handling in playlist-tracks UI with explicit guidance.
+- Updated Spotify playlist-track fetching to prefer `GET /playlists/{id}/items` with compatibility fallback to legacy `/tracks`, aligning with February 2026 API endpoint changes.
+- Hardened playlist-track normalization to support both `items[].item` and `items[].track` payload shapes plus case-insensitive owner-id checks for track-access inference.
+- Updated playlist cards to remain clickable even when access inference is uncertain, while keeping a warning indicator for potentially restricted playlists.
+- Preserved stored Spotify scope during token refresh when refresh responses omit `scope`, and refined `403` classification to reduce false `SPOTIFY_INSUFFICIENT_SCOPE` responses.
 
 ## In Progress
 
@@ -184,3 +194,8 @@ change.
 - Spotify playlist loading no longer fails hard on partial upstream playlist objects; malformed entries are skipped and valid playlists continue to render.
 - Playlist cards now recover accurate track counts via a detail-endpoint fallback when Spotify list responses omit track totals.
 - Playlist track counts now read from either `tracks.total` or `items.total` in list responses, matching current Spotify payload variations.
+- Spotify playlists are now directly navigable: each playlist card opens a dedicated details view with a numbered track table (title, album, date added, length).
+- Playlist cards now explicitly surface when tracks cannot be fetched due to Spotify owner/collaborator restrictions and avoid navigating into guaranteed `403` failures for those entries.
+- Playlist item fetching now follows Spotify's post-February 2026 endpoint model (`/items`) with a legacy `/tracks` fallback, and normalizes both legacy and renamed track-item payload shapes.
+- Track-list access diagnostics now rely on stored granted scopes in addition to raw Spotify error text to avoid false permission prompts for valid owner tokens.
+- Environment note: `node`/`npm` are unavailable in the current execution environment, so lint/build re-verification could not be run in this session.

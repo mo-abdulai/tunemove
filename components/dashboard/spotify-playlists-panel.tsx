@@ -1,6 +1,7 @@
 "use client";
 
-import { Disc3, Link2 } from "lucide-react";
+import { ChevronRight, Disc3, Link2, Lock } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { SpotifyPlaylist } from "@/types/spotify";
@@ -395,44 +396,71 @@ export function SpotifyPlaylistsPanel() {
         {state.playlists.map((playlist) => (
           <article
             key={playlist.id}
-            className="overflow-hidden rounded-2xl border border-surface-border/80 bg-surface/80 p-4 shadow-sm shadow-base/25 transition-all duration-200 hover:-translate-y-0.5 hover:border-copy-secondary/40 hover:shadow-md hover:shadow-base/35"
+            className="relative overflow-hidden rounded-2xl border border-surface-border/80 bg-surface/80 p-4 shadow-sm shadow-base/25 transition-all duration-200 hover:-translate-y-0.5 hover:border-copy-secondary/40 hover:shadow-md hover:shadow-base/35"
           >
-            {playlist.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={playlist.imageUrl}
-                alt={`${playlist.name} cover`}
-                className="h-36 w-full rounded-xl border border-surface-border/80 object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="flex h-36 w-full items-center justify-center rounded-xl border border-surface-border/80 bg-elevated/70 text-copy-muted">
-                <Disc3 className="h-6 w-6" aria-hidden="true" />
-              </div>
-            )}
-            <div className="mt-4">
-              <h2 className="line-clamp-1 text-base font-semibold tracking-tight text-copy-primary">
-                {playlist.name}
-              </h2>
-              <p className="mt-1 text-xs text-copy-secondary">
-                {playlist.trackCount} tracks
-              </p>
-              {playlist.ownerName ? (
-                <p className="mt-2 line-clamp-1 text-xs text-copy-muted">
-                  by {playlist.ownerName}
+            <Link
+              href={`/dashboard/playlists/${encodeURIComponent(playlist.id)}`}
+              className="absolute inset-0 z-10 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+              aria-label={`View tracks for ${playlist.name}`}
+            />
+            <div className="relative z-20 pointer-events-none">
+              {playlist.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={playlist.imageUrl}
+                  alt={`${playlist.name} cover`}
+                  className="h-36 w-full rounded-xl border border-surface-border/80 object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-36 w-full items-center justify-center rounded-xl border border-surface-border/80 bg-elevated/70 text-copy-muted">
+                  <Disc3 className="h-6 w-6" aria-hidden="true" />
+                </div>
+              )}
+              <div className="mt-4">
+                <h2 className="line-clamp-1 text-base font-semibold tracking-tight text-copy-primary">
+                  {playlist.name}
+                </h2>
+                <p className="mt-1 text-xs text-copy-secondary">
+                  {playlist.trackCount} tracks
                 </p>
-              ) : null}
-              {playlist.externalUrl ? (
-                <a
-                  href={playlist.externalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs text-spotify transition-colors duration-200 hover:text-copy-primary"
-                >
-                  <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  Open in Spotify
-                </a>
-              ) : null}
+                {playlist.ownerName ? (
+                  <p className="mt-2 line-clamp-1 text-xs text-copy-muted">
+                    by {playlist.ownerName}
+                  </p>
+                ) : null}
+                {playlist.canAccessTracks === false ? (
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-warning">
+                    <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                    Track access may be restricted by Spotify
+                  </p>
+                ) : null}
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <p
+                    className={
+                      playlist.canAccessTracks === false
+                        ? "inline-flex items-center gap-1.5 text-xs font-medium text-warning"
+                        : "inline-flex items-center gap-1.5 text-xs font-medium text-brand-secondary"
+                    }
+                  >
+                    {playlist.canAccessTracks === false
+                      ? "Try opening tracks"
+                      : "View tracks"}
+                    <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </p>
+                  {playlist.externalUrl ? (
+                    <a
+                      href={playlist.externalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="pointer-events-auto inline-flex items-center gap-1.5 text-xs text-spotify transition-colors duration-200 hover:text-copy-primary"
+                    >
+                      <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      Open in Spotify
+                    </a>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </article>
         ))}
