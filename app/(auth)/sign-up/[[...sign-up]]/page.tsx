@@ -1,8 +1,9 @@
 import { SignUp } from "@clerk/nextjs";
+import styles from "../../auth-layout.module.css";
 
 export default function SignUpPage() {
   return (
-    <div className="w-full max-w-md">
+    <div className={styles.formFrame}>
       <SignUp path="/sign-up" signInUrl="/sign-in" />
     </div>
   );

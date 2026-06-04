@@ -1,4 +1,5 @@
 import Link from "next/link";
+import styles from "./auth-layout.module.css";
 
 const authFeatureList = [
   "Secure sign in and account management with Clerk.",
@@ -12,36 +13,33 @@ export default function AuthLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen bg-base text-copy-primary">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl">
-        <aside className="hidden w-1/2 flex-col justify-between border-r border-surface-border px-12 py-14 lg:flex">
-          <div className="space-y-8">
-            <Link
-              href="/"
-              className="inline-flex text-lg font-semibold tracking-tight text-copy-primary"
-            >
-              TuneMove
-            </Link>
-            <div className="space-y-3">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-copy-muted">
-                Playlist Transfer
-              </p>
-              <h1 className="max-w-md text-3xl font-semibold tracking-tight text-copy-primary">
-                Move your playlists between platforms with less friction.
-              </h1>
-              <p className="max-w-md text-sm text-copy-secondary">
-                Sign in to start connecting accounts and managing transfers.
-              </p>
+    <div className={styles.shell}>
+      <div className={styles.split}>
+        <aside className={styles.marketingPane}>
+          <div className={styles.marketingInner}>
+            <div className={styles.heroBlock}>
+              <Link href="/" className={styles.brand}>
+                TuneMove
+              </Link>
+              <div className={styles.intro}>
+                <p className={styles.eyebrow}>Playlist Transfer</p>
+                <h1 className={styles.headline}>
+                  Move your playlists between platforms with less friction.
+                </h1>
+                <p className={styles.supporting}>
+                  Sign in to start connecting accounts and managing transfers.
+                </p>
+              </div>
             </div>
+            <ul className={styles.featureList}>
+              {authFeatureList.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
-          <ul className="space-y-2 text-sm text-copy-secondary">
-            {authFeatureList.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
         </aside>
 
-        <section className="flex flex-1 items-center justify-center px-4 py-10 sm:px-8 lg:px-14">
+        <section className={styles.formPane}>
           {children}
         </section>
       </div>

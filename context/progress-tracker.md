@@ -9,7 +9,7 @@ change.
 
 ## Current Goal
 
-- Continue to the next scoped feature unit after completing Spotify integration.
+- Continue to the next scoped feature unit after completing Billboard-to-Spotify.
 
 ## Completed
 
@@ -144,6 +144,81 @@ change.
 - Hardened playlist-track normalization to support both `items[].item` and `items[].track` payload shapes plus case-insensitive owner-id checks for track-access inference.
 - Updated playlist cards to remain clickable even when access inference is uncertain, while keeping a warning indicator for potentially restricted playlists.
 - Preserved stored Spotify scope during token refresh when refresh responses omit `scope`, and refined `403` classification to reduce false `SPOTIFY_INSUFFICIENT_SCOPE` responses.
+- Completed feature `07-apple-music-integration` from `context/feature-specs/07-apple-music-integration.md`.
+- Added Apple Music integration utility + types:
+  `lib/apple-music.ts`,
+  `types/apple-music.ts`.
+- Added authenticated Apple Music API routes:
+  `GET /api/apple-music/profile`,
+  `GET /api/apple-music/search`.
+- Added Apple Music UI components:
+  `components/apple-music/apple-music-connection-card.tsx`,
+  `components/apple-music/apple-music-search.tsx`,
+  `components/apple-music/apple-music-result-card.tsx`.
+- Updated connections/playlists dashboard surfaces for Apple Music:
+  `app/dashboard/connections/page.tsx`,
+  `app/dashboard/playlists/page.tsx`,
+  `app/dashboard/playlists/loading.tsx`.
+- Implemented MusicKit authorization states (`Not connected`, `Authorizing...`, `Connected`) and Apple catalog search loading/empty/result/error states.
+- Re-verified lint/build success with `npm run lint` and `npm run build`.
+- Completed feature `08-billboard-to-spotify` from `context/feature-specs/08-billboard-to-spotify.md`.
+- Added Billboard integration utility + types:
+  `lib/billboard.ts`,
+  `types/billboard.ts`.
+- Added authenticated Billboard API routes:
+  `GET /api/billboard/hot-100`,
+  `POST /api/billboard/create-spotify-playlist`.
+- Added Billboard dashboard UI components:
+  `components/billboard/billboard-year-form.tsx`,
+  `components/billboard/billboard-song-list.tsx`,
+  `components/billboard/create-spotify-playlist-button.tsx`,
+  `components/billboard/billboard-result-summary.tsx`,
+  `components/billboard/billboard-to-spotify-panel.tsx`.
+- Added new Billboard dashboard route and navigation:
+  `app/dashboard/billboard/page.tsx`,
+  sidebar/nav updates in `components/dashboard/dashboard-sidebar.tsx`,
+  route title/subtitle updates in `components/dashboard/dashboard-shell.tsx`.
+- Extended Spotify integration for playlist-generation flow:
+  added `playlist-modify-private` and `playlist-modify-public` to requested scopes and added `searchSpotifyTracks`, `createSpotifyPlaylist`, and `addTracksToSpotifyPlaylist` helpers in `lib/spotify.ts`.
+- Added Spotify scope validation for Billboard playlist creation and explicit reconnect-required responses when required playlist scopes are missing.
+- Implemented Billboard year-mismatch protection by validating scraped chart row metadata year (`data-ajax`) against the requested year to avoid silently returning fallback year charts.
+- Updated architecture context to document Billboard charts integration.
+- Re-verified lint/build success with `npm run lint` and `npm run build`.
+- Fixed Billboard Hot 100 parsing for rows with injected chart-detail/ad markup by switching to row-scoped parsing in `lib/billboard.ts` (parse each `<ul.o-chart-results-list-row>` independently, then extract title + `a-no-trucate` artist within that row).
+- Resolved malformed artist values (e.g., “Also appears on these Year End Charts ...”) and restored full 100-song extraction for affected years such as 2019.
+- Re-verified lint/build success with `npm run lint` and `npm run build` after parser fix.
+- Improved Billboard playlist-creation 403 diagnostics in `app/api/billboard/create-spotify-playlist/route.ts` by adding structured server logging and separating scope-related 403 responses from generic Spotify-forbidden responses.
+- Updated Billboard client error mapping in `components/billboard/billboard-to-spotify-panel.tsx` to display explicit `SPOTIFY_FORBIDDEN` guidance.
+- Re-verified lint/build success with `npm run lint` and `npm run build` after 403-diagnostics update.
+- Updated Spotify playlist creation helper to use `POST /me/playlists` as the primary endpoint (current Spotify Web API reference) with compatibility fallback to `POST /users/{user_id}/playlists` when needed.
+- Re-verified lint/build success with `npm run lint` and `npm run build` after Spotify create-playlist endpoint update.
+- Fixed a Turbopack panic on auth routes by removing an accidental root-level stray file named `, s.artist);} }` whose invalid extension corrupted the CSS content glob parsing path during endpoint compilation.
+- Re-verified Turbopack compilation stability with `npm run build` (Next.js 16.2.5 / Turbopack) after removing the stray file.
+- Added a dedicated static asset directory at `public/logo/` (tracked with `.gitkeep`) so project logo files can be dropped in and served from `/logo/*`.
+- Updated the auth marketing panel (`app/(auth)/layout.tsx`) to render the shared logo asset (`/logo/logo.png`) directly beneath the sign-in introductory copy.
+- Refined auth-logo presentation by centering it beneath the intro copy and constraining responsive width (`w-full max-w-52`) so the logo fits cleanly within the auth panel.
+- Rebalanced auth split-layout spacing around the vertical divider by centering the left panel inside a `max-w-md` container and increasing symmetric horizontal padding on both panes (`lg:px-16`) so content no longer feels crowded near the center line.
+- Applied a stronger auth-panel centering pass by increasing divider-side spacing (`lg:pr-24` left, `lg:pl-24` right), tightening left content width to `max-w-sm`, and adding `mx-auto` to sign-in/sign-up page wrappers so the Clerk card centers within the right pane.
+- Increased divider-side desktop spacing further (`lg:pr-36` on the left panel and `lg:pl-36` on the right panel) to move both content blocks farther away from the center line.
+- Refined auth-screen visual polish without changing auth logic: rebalanced split proportions to a 45/55 desktop feel, tightened typography and spacing hierarchy, and upgraded logo presentation with larger sizing and cleaner framed placement.
+- Added calm auth microinteractions (panel/form fade/slide-in) plus subtle card-glow wrapping on sign-in/sign-up wrappers to improve premium motion quality without redesigning the layout.
+- Extended Clerk appearance customization for sign-in/sign-up with token-based element styling (elevated card surface, softer border/ring/shadow separation, refined inputs/buttons/social controls) while preserving Clerk default flows.
+- Re-verified production build success with `npm run build` after auth polish updates.
+- Refined auth panel balance/composition in `app/(auth)/layout.tsx` by slightly widening the branding pane (`48/52` split), tightening divider-side horizontal spacing (`lg:pr-14` / `lg:pl-14`), and expanding left-content/logo bounds (`max-w-lg`, `max-w-md` copy width, `max-w-64` logo frame) while preserving existing Clerk behavior and the latest surface/glow polish.
+- Re-verified lint/build success with `npm run lint` and `npm run build` after auth layout balance refinement.
+- Rebalanced auth composition to a strict equal split by setting desktop panes to `50/50` (`lg:w-1/2` on both sides), then tightening symmetry around the divider (`lg:pr-16` left / `lg:pl-16` right) to keep both panels centered and reduce perceived clipping.
+- Reduced Clerk form dominance by constraining sign-in/sign-up wrappers from `max-w-md` to `max-w-sm`, and restored logo-card framing/bounds (`max-w-60` card inside a `max-w-md` branding column) to keep left-panel proportions clean.
+- Re-verified lint/build success with `npm run lint` and `npm run build` after equal-split auth layout refinement.
+- Applied a divider-centering correction pass for auth composition by increasing center-side gutters (`lg:pr-24` left / `lg:pl-24` right), tightening the left branding column to `max-w-sm` with a smaller logo card (`max-w-56`), and hard-capping Clerk auth width via appearance `rootBox/cardBox` (`max-w-[22rem]`) so the sign-in form no longer dominates the right pane.
+- Re-verified lint/build success with `npm run lint` and `npm run build` after divider-center and Clerk-width constraint adjustments.
+- Enforced exact equal desktop auth/home split by replacing the auth shell flex layout with an explicit two-track grid (`minmax(0,1fr)` / `minmax(0,1fr)`) and matching desktop padding on both panes.
+- Re-verified lint/build success with `npm run lint` and `npm run build` after the equal-grid auth/home split update.
+- Matched the auth/home screen to the latest reference image by removing the left logo card and the extra purple form glow wrapper while preserving the strict equal two-pane grid.
+- Re-verified lint/build success with `npm run lint` and `npm run build` after matching the auth/home screen to the provided reference.
+- Reworked the auth/home screen to match the provided screenshot geometry more strictly: full-viewport `50vw/50vw` desktop panes, divider at the viewport midpoint, left description offset from the divider, and a wider Clerk card positioned near the divider in the right pane.
+- Re-verified lint/build success with `npm run lint` and `npm run build` after the full-viewport screenshot-aligned auth/home redesign.
+- Finalized the pragmatic screenshot-aligned auth/home plan by keeping Clerk prebuilt, preserving exact outer `50vw/50vw` geometry, adding the screenshot-style top border, and locking the desktop auth split to dynamic viewport height.
+- Moved auth/home screenshot geometry into `app/(auth)/auth-layout.module.css` so the viewport split, midpoint divider, offsets, and form width are enforced by plain CSS instead of fragile arbitrary utility classes.
 
 ## In Progress
 
@@ -151,7 +226,7 @@ change.
 
 ## Next Up
 
-- Start the next feature spec on top of the completed auth + dashboard shell + dashboard home + dashboard polish + Spotify integration baseline.
+- After feature `08-billboard-to-spotify`, continue to the transfer engine and playlist matching foundation.
 
 ## Open Questions
 
@@ -165,6 +240,7 @@ change.
 - Keep page-level layout sizing and spacing adaptable through `PageContainer` props rather than duplicating wrapper layout logic per dashboard route.
 - Use an encrypted HTTP-only cookie store for temporary Spotify OAuth metadata until database-backed connected account persistence is implemented.
 - Use signed stateless OAuth state tokens (HMAC + expiry) for Spotify callback correlation, avoiding request-handler memory persistence assumptions.
+- Use browser storage for temporary Apple Music Music User Token + storefront session metadata so MusicKit client authorization can drive authenticated Apple catalog/profile requests before database-backed connected-account storage exists.
 
 ## Session Notes
 
@@ -199,3 +275,25 @@ change.
 - Playlist item fetching now follows Spotify's post-February 2026 endpoint model (`/items`) with a legacy `/tracks` fallback, and normalizes both legacy and renamed track-item payload shapes.
 - Track-list access diagnostics now rely on stored granted scopes in addition to raw Spotify error text to avoid false permission prompts for valid owner tokens.
 - Environment note: `node`/`npm` are unavailable in the current execution environment, so lint/build re-verification could not be run in this session.
+- Apple Music integration is now implemented for current scope: MusicKit loading + authorization, authenticated Apple profile/search API routes, Apple connection card on Connections, and Apple catalog search UI on Playlists.
+- Environment note: `npm run lint` and `npm run build` both pass after Apple Music integration changes.
+- Fixed repeated local Turbopack panic (`Parsing glob pattern ... unopened alternate group`) by removing an accidental malformed filename in the repository root that Tailwind/PostCSS file tracking attempted to include in a brace-glob extension list.
+- Environment note: `npm run build` passes after the Turbopack panic fix.
+- Added `public/logo/.gitkeep` so a shared logo asset folder is present in version control for upcoming branding files.
+- Sign-in/sign-up auth panel now displays the configured TuneMove logo under the introductory marketing text via `next/image` and `public/logo/logo.png`.
+- Auth logo styling now uses a centered wrapper and responsive max-width sizing so the image fits and remains visually centered in the desktop auth marketing panel.
+- Auth layout content on both sides of the divider now has wider spacing and centered inner bounds, improving balance between the marketing panel and the auth form panel.
+- Auth layout now has additional offset from the center divider and explicit form-wrapper centering on both auth routes to prevent either side from appearing too close to the divider.
+- Auth split-layout now uses extra inner-side desktop padding at the divider to create a larger visual gutter between the left marketing content and right Clerk form card.
+- Auth UI polish pass is now applied: updated 45/55 split balance, stronger logo framing/size, cleaner typography spacing, elevated Clerk card treatment, and subtle entrance motion while keeping existing auth structure/logic intact.
+- Auth layout composition is now tightened for better two-panel balance: branding pane widened slightly, center dead space reduced, and logo-card proportion restored while retaining the improved premium shadows/glow treatment and unchanged Clerk auth flows.
+- Auth layout now uses equal desktop pane widths with matched inner composition constraints so the right Clerk card no longer dominates and the left branding content no longer reads clipped against the center divider.
+- Auth divider composition is now further corrected by increasing center gutters and constraining Clerk root/card widths through appearance overrides, preserving the same premium surface/glow styling while keeping the center divider visually central and clear of left-panel clipping.
+- Auth/home split equality is now enforced structurally through equal CSS grid tracks with symmetric pane padding, rather than relying on flex width utilities plus uneven side gutters.
+- Environment note: `npm run lint` and `npm run build` both pass after the auth/home equal split enforcement.
+- Auth/home reference alignment now uses a text-only left marketing pane and a standalone centered Clerk card on the right, matching the provided screenshot composition.
+- Environment note: rendered `/sign-in` markup confirms the text-only left pane, standalone right Clerk wrapper, and enforced equal-grid auth shell; the in-app Browser target was unavailable in this session.
+- Auth/home screenshot alignment now uses full-width desktop panes instead of a centered `max-w-6xl` shell, so the vertical divider stays exactly at `50vw`.
+- Environment note: rendered `/sign-in` markup confirms the full-width `50vw/50vw` split, right-pane `4.5rem` form offset, and widened `28.5rem` Clerk wrapper; the in-app Browser target remained unavailable.
+- Auth/home implementation now intentionally keeps Clerk's prebuilt auth form for reliability while making the surrounding composition screenshot-accurate at the outer layout level.
+- Auth/home layout geometry is now centralized in a CSS module to reduce runtime mismatch risk from Tailwind arbitrary class emission or breakpoint parsing.

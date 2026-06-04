@@ -1,0 +1,163 @@
+.shell {
+  min-height: 100dvh;
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.split {
+  min-height: 100dvh;
+  width: 100%;
+}
+
+.marketingPane {
+  display: none;
+}
+
+.formPane {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.marketingInner {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  max-width: 28rem;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.heroBlock {
+  animation: auth-panel-in 500ms ease both;
+}
+
+.brand {
+  display: inline-flex;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color 200ms ease;
+}
+
+.brand:hover {
+  color: var(--text-secondary);
+}
+
+.intro {
+  margin-top: 2.75rem;
+}
+
+.eyebrow {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1rem;
+  text-transform: uppercase;
+}
+
+.headline {
+  max-width: 28rem;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 2.125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.18;
+}
+
+.supporting {
+  max-width: 28rem;
+  margin: 1rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.625;
+}
+
+.featureList {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.625;
+  list-style: none;
+}
+
+.formFrame {
+  width: 100%;
+  max-width: 28.5rem;
+  animation: auth-card-in 500ms ease both;
+}
+
+@media (min-width: 1024px) {
+  .shell {
+    overflow: hidden;
+  }
+
+  .split {
+    display: grid;
+    width: 100vw;
+    grid-template-columns: 50vw 50vw;
+  }
+
+  .marketingPane {
+    display: flex;
+    min-width: 0;
+    border-right: 1px solid var(--border-default);
+    padding-block: 4.5rem;
+  }
+
+  .marketingInner {
+    margin-left: auto;
+    margin-right: 2rem;
+  }
+
+  .formPane {
+    min-width: 0;
+    justify-content: flex-start;
+    padding: 2.5rem 4rem 2.5rem 4.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .marketingInner {
+    margin-right: 6rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .marketingInner {
+    margin-right: 10rem;
+  }
+}
+
+@keyframes auth-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
